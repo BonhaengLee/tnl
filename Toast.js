@@ -1,12 +1,25 @@
+const DEFAULT_OIPTIONS = {
+  autoClose: 5000,
+};
+
 export default class Toast {
   #toastElem;
+  #autoCloseTimeout;
 
   constructor(options) {
     this.#toastElem = document.createElement("div");
     this.#toastElem.classList.add("toast");
-    Object.entries(options).forEach(([key, value]) => {
-      this[key] = value;
-    });
+    Object.entries({ ...DEFAULT_OIPTIONS, ...options }).forEach(
+      ([key, value]) => {
+        this[key] = value;
+      }
+    );
+  }
+
+  set autoClose(value) {
+    if (value === false) return;
+    if (this.#autoCloseTimeout != null) clearTimeout(this.#autoCloseTimeout);
+    this.#autoCloseTimeout = setTimeout(() => this.remove(), value);
   }
 
   set position(value) {
