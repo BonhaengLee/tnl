@@ -8,30 +8,53 @@ const DEFAULT_OIPTIONS = {
 
 export default class Toast {
   #toastElem;
-  #autoCloseTimeout;
+  #autoCloseInterval;
   #progressInterval;
   #removeBinded;
-  #visibleSince;
+  #timeVisible = 0;
   #autoClose;
+  #isPaused = false;
+  #unpause;
+  #pause;
 
   constructor(options) {
     this.#toastElem = document.createElement("div");
     this.#toastElem.classList.add("toast");
-    this.#visibleSince = new Date();
     requestAnimationFrame(() => {
       this.#toastElem.classList.add("show");
     });
     this.#removeBinded = this.remove.bind(this);
+    this.#unpause = () => (this.#isPaused = false);
+    this.#pause = () => (this.#isPaused = true);
     this.update({ ...DEFAULT_OIPTIONS, ...options });
   }
 
   set autoClose(value) {
     this.#autoClose = value;
-    this.#visibleSince = new Date();
+    this.#timeVisible = 0;
     if (value === false) return;
-    if (this.#autoCloseTimeout != null) clearTimeout(this.#autoCloseTimeout);
 
-    this.#autoCloseTimeout = setTimeout(() => this.remove(), value);
+    let lastTime;
+    const func = (time) => {
+      if (lastTime == null) {
+        lastTime = time;
+        this.#autoCloseInterval = requestAnimationFrame(func);
+        return;
+      }
+
+      if (!this.#isPaused) {
+        this.#timeVisible += time - lastTime;
+        if (this.#timeVisible >= this.#autoClose) {
+          this.remove();
+          return;
+        }
+      }
+
+      lastTime = time;
+      this.#autoCloseInterval = requestAnimationFrame(func);
+    };
+
+    this.#autoCloseInterval = requestAnimationFrame(func);
   }
 
   set position(value) {
@@ -59,24 +82,32 @@ export default class Toast {
 
   set showProgress(value) {
     this.#toastElem.classList.toggle("progress", value);
-    this.#toastElem.style.setProperty(
-      "--progress",
-      1
-      // `${this.#timeVisible}ms`
-    );
+    this.#toastElem.style.setProperty("--progress", 1);
 
     if (value) {
-      this.#progressInterval = setInterval(() => {
-        const timeVisible = new Date() - this.#visibleSince;
-        this.#toastElem.style.setProperty(
-          "--progress",
-          1 - timeVisible / this.#autoClose
-        );
-      }, 10);
+      const func = () => {
+        if (!this.#isPaused) {
+          // this.#timeVisible += time - lastTime;
+          this.#toastElem.style.setProperty(
+            "--progress",
+            1 - this.#timeVisible / this.#autoClose
+          );
+        }
+        this.#progressInterval = requestAnimationFrame(func);
+      };
+      this.#progressInterval = requestAnimationFrame(func);
     }
   }
 
-  // show() {}
+  set pauseOnHover(value) {
+    if (value) {
+      this.#toastElem.addEventListener("mouseover", this.#unpause);
+      this.#toastElem.addEventListener("mouseleave", this.#pause);
+    } else {
+      this.#toastElem.removeEventListener("mouseover", this.#unpause);
+      this.#toastElem.removeEventListener("mouseleave", this.#pause);
+    }
+  }
 
   update(options) {
     Object.entries(options).forEach(([key, value]) => {
@@ -85,8 +116,8 @@ export default class Toast {
   }
 
   remove() {
-    clearTimeout(this.#autoCloseTimeout);
-    clearInterval(this.#progressInterval);
+    cancelAnimationFrame(this.#autoCloseInterval);
+    cancelAnimationFrame(this.#progressInterval);
     const container = this.#toastElem.parentElement;
     this.#toastElem.classList.remove("show");
     this.#toastElem.addEventListener("transitionend", () => {

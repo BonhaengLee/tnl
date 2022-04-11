@@ -4,10 +4,6 @@ document.querySelector("button").addEventListener("click", () => {
   const toast = new Toast({
     text: "Hello World!",
     position: "top-right",
-    // showProgress: false,
+    pauseOnHover: true,
   });
-
-  setTimeout(() => {
-    toast.update({ autoClose: 2000 });
-  }, 1000);
 });
