@@ -8,7 +8,7 @@
   cursor: pointer;
 }
 
-.toast::after {
+.toast.can-close::after {
   content: "\00D7";
   position: absolute;
   top: 2px;
@@ -21,7 +21,7 @@
   width: 250px;
   display: flex;
   flex-direction: column;
-  gap: 0.5 ㅈrem;
+  gap: 0.5rem;
 }
 
 .toast-container[data-position^="top-"] {
