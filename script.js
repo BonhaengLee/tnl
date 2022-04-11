@@ -3,7 +3,14 @@ import Toast from "./Toast.js";
 document.querySelector("button").addEventListener("click", () => {
   const toast = new Toast({
     text: "Hello World!",
-    autoClose: false,
-    canClose: true,
+    autoClose: 1000,
+    position: "top-right",
+  });
+
+  setTimeout(() => {
+    toast.update({
+      text: "Hello World! (updated)",
+      position: "top-left",
+    });
   });
 });

@@ -13,6 +13,9 @@ export default class Toast {
   constructor(options) {
     this.#toastElem = document.createElement("div");
     this.#toastElem.classList.add("toast");
+    requestAnimationFrame(() => {
+      this.#toastElem.classList.add("show");
+    });
     this.#removeBinded = this.remove.bind(this);
     this.update({ ...DEFAULT_OIPTIONS, ...options });
   }
@@ -56,10 +59,13 @@ export default class Toast {
 
   remove() {
     const container = this.#toastElem.parentElement;
-    this.#toastElem.remove();
+    this.#toastElem.classList.remove("show");
+    this.#toastElem.addEventListener("transitionend", () => {
+      this.#toastElem.remove();
+      if (container.hasChildNodes()) return;
+      container.remove();
+    });
     this.onClose();
-    if (container.hasChildNodes()) return;
-    container.remove();
   }
 }
 
