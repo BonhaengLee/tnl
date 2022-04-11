@@ -3,16 +3,21 @@ const DEFAULT_OIPTIONS = {
   position: "top-right",
   onClose: () => {},
   canClose: true,
+  showProgress: true,
 };
 
 export default class Toast {
   #toastElem;
   #autoCloseTimeout;
+  #progressInterval;
   #removeBinded;
+  #visibleSince;
+  #autoClose;
 
   constructor(options) {
     this.#toastElem = document.createElement("div");
     this.#toastElem.classList.add("toast");
+    this.#visibleSince = new Date();
     requestAnimationFrame(() => {
       this.#toastElem.classList.add("show");
     });
@@ -21,8 +26,11 @@ export default class Toast {
   }
 
   set autoClose(value) {
+    this.#autoClose = value;
+    this.#visibleSince = new Date();
     if (value === false) return;
     if (this.#autoCloseTimeout != null) clearTimeout(this.#autoCloseTimeout);
+
     this.#autoCloseTimeout = setTimeout(() => this.remove(), value);
   }
 
@@ -49,6 +57,25 @@ export default class Toast {
     }
   }
 
+  set showProgress(value) {
+    this.#toastElem.classList.toggle("progress", value);
+    this.#toastElem.style.setProperty(
+      "--progress",
+      1
+      // `${this.#timeVisible}ms`
+    );
+
+    if (value) {
+      this.#progressInterval = setInterval(() => {
+        const timeVisible = new Date() - this.#visibleSince;
+        this.#toastElem.style.setProperty(
+          "--progress",
+          1 - timeVisible / this.#autoClose
+        );
+      }, 10);
+    }
+  }
+
   // show() {}
 
   update(options) {
@@ -58,6 +85,8 @@ export default class Toast {
   }
 
   remove() {
+    clearTimeout(this.#autoCloseTimeout);
+    clearInterval(this.#progressInterval);
     const container = this.#toastElem.parentElement;
     this.#toastElem.classList.remove("show");
     this.#toastElem.addEventListener("transitionend", () => {
