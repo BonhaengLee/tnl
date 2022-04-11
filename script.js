@@ -5,5 +5,6 @@ document.querySelector("button").addEventListener("click", () => {
     text: "Hello World!",
     position: "top-right",
     pauseOnHover: true,
+    pauseOnFocusLoss: true,
   });
 });

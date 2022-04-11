@@ -16,6 +16,8 @@ export default class Toast {
   #isPaused = false;
   #unpause;
   #pause;
+  #visibilityChange;
+  #shouldUnPause;
 
   constructor(options) {
     this.#toastElem = document.createElement("div");
@@ -26,6 +28,9 @@ export default class Toast {
     this.#removeBinded = this.remove.bind(this);
     this.#unpause = () => (this.#isPaused = false);
     this.#pause = () => (this.#isPaused = true);
+    this.#visibilityChange = () => {
+      this.#shouldUnPause = document.visibilityState === "visible";
+    };
     this.update({ ...DEFAULT_OIPTIONS, ...options });
   }
 
@@ -36,6 +41,10 @@ export default class Toast {
 
     let lastTime;
     const func = (time) => {
+      if (this.#shouldUnPause) {
+        lastTime = null;
+        this.#shouldUnPause = false;
+      }
       if (lastTime == null) {
         lastTime = time;
         this.#autoCloseInterval = requestAnimationFrame(func);
@@ -101,11 +110,19 @@ export default class Toast {
 
   set pauseOnHover(value) {
     if (value) {
-      this.#toastElem.addEventListener("mouseover", this.#unpause);
       this.#toastElem.addEventListener("mouseleave", this.#pause);
+      this.#toastElem.addEventListener("mouseover", this.#unpause);
     } else {
-      this.#toastElem.removeEventListener("mouseover", this.#unpause);
       this.#toastElem.removeEventListener("mouseleave", this.#pause);
+      this.#toastElem.removeEventListener("mouseover", this.#unpause);
+    }
+  }
+
+  set pauseOnFocusLoss(value) {
+    if (value) {
+      document.addEventListener("visibilitychange", this.#visibilityChange);
+    } else {
+      document.removeEventListener("visibilitychange", this.#visibilityChange);
     }
   }
 
